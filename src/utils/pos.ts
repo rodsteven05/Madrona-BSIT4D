@@ -28,8 +28,4 @@ export const validateCash = (rawAmount: string, total: number) => {
 export const paidAmountFor = (method: PaymentMethod, total: number, cashAmount: string) =>
   method === 'Cash' ? Math.round(Number(cashAmount) * 100) : total
 
-export const createReference = () => {
-  const timestamp = Date.now().toString(36).toUpperCase()
-  const random = crypto.getRandomValues(new Uint32Array(1))[0].toString(36).slice(0, 4).toUpperCase()
-  return `TXN-${timestamp}-${random}`
-}
+export const createReference = () => `TXN-${crypto.randomUUID().toUpperCase()}`

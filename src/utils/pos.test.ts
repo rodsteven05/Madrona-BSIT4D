@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { products } from '../data/products'
-import { cartTotal, formatCurrency, validateCash } from './pos'
+import { cartTotal, createReference, formatCurrency, validateCash } from './pos'
 
 const cart = [
   { product: products[0], quantity: 2 },
@@ -21,4 +21,9 @@ describe('POS calculations', () => {
     expect(validateCash('140', 14000)).toBeNull()
     expect(validateCash('200', 14000)).toBeNull()
   })
+})
+
+it('generates different references for completed transactions', () => {
+  const references = Array.from({ length: 1000 }, createReference)
+  expect(new Set(references).size).toBe(references.length)
 })

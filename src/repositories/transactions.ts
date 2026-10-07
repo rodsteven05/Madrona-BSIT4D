@@ -10,6 +10,12 @@ interface TransactionRepository {
 const localRepository: TransactionRepository = {
   async save(transaction) {
     const existing = JSON.parse(localStorage.getItem(storageKey) ?? '[]') as CompletedTransaction[]
+    const previous = existing.find((entry) => entry.id === transaction.id)
+    if (previous) {
+      if (JSON.stringify(previous) !== JSON.stringify(transaction)) throw new Error('Transaction ID conflict.')
+      return
+    }
+    if (existing.some((entry) => entry.reference === transaction.reference)) throw new Error('Transaction reference conflict.')
     localStorage.setItem(storageKey, JSON.stringify([...existing, transaction]))
   },
 }
@@ -41,4 +47,4 @@ const supabaseRepository: TransactionRepository = {
 }
 
 export const transactionRepository = usesSupabase ? supabaseRepository : localRepository
-export const persistenceLabel = usesSupabase ? 'Supabase connected' : 'Local demo mode'
+export const persistenceLabel = usesSupabase ? 'Supabase configured' : 'Local demo mode'

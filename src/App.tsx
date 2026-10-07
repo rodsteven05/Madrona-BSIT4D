@@ -1,9 +1,9 @@
-import { useMemo, useReducer, useState } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { OrderLines } from './components/OrderLines'
-import { products } from './data/products'
+import { loadProducts } from './repositories/products'
 import { persistenceLabel, transactionRepository } from './repositories/transactions'
 import { initialState, posReducer } from './state/posReducer'
-import type { CompletedTransaction, PaymentMethod } from './types'
+import type { CompletedTransaction, PaymentMethod, Product } from './types'
 import { cartTotal, createReference, formatCurrency, paidAmountFor, toTransactionLines, validateCash } from './utils/pos'
 
 const steps = [
@@ -15,6 +15,16 @@ const steps = [
 
 function App() {
   const [state, dispatch] = useReducer(posReducer, initialState)
+  const [products, setProducts] = useState<Product[]>([])
+  const paymentLock = useRef(false)
+  const pendingTransaction = useRef<CompletedTransaction | null>(null)
+  useEffect(() => {
+    let active = true
+    loadProducts().then((catalog) => { if (active) setProducts(catalog) }).catch(() => {
+      if (active) dispatch({ type: 'SET_FEEDBACK', message: 'Products could not be loaded. Check the database configuration and reload.' })
+    })
+    return () => { active = false }
+  }, [])
   const [cashAmount, setCashAmount] = useState('')
   const [paymentError, setPaymentError] = useState('')
   const [processing, setProcessing] = useState(false)
@@ -31,6 +41,7 @@ function App() {
   }
 
   const completePayment = async (method: PaymentMethod, rawCash = '') => {
+    if (paymentLock.current || !state.cart.length) return
     if (method === 'Cash') {
       const error = validateCash(rawCash, total)
       if (error) {
@@ -38,32 +49,41 @@ function App() {
         return
       }
     }
+    paymentLock.current = true
     setPaymentError('')
     setProcessing(true)
     if (method === 'Credit/Debit Card') await new Promise((resolve) => window.setTimeout(resolve, 1200))
     const amountPaid = paidAmountFor(method, total, rawCash)
-    const transaction: CompletedTransaction = {
+    const previous = pendingTransaction.current
+    const items = toTransactionLines(state.cart)
+    const isRetry = previous && previous.paymentMethod === method
+      && previous.amountPaid === amountPaid && previous.total === total
+      && JSON.stringify(previous.items) === JSON.stringify(items)
+    const transaction: CompletedTransaction = isRetry ? previous : {
       id: crypto.randomUUID(),
       reference: createReference(),
       completedAt: new Date().toISOString(),
-      items: toTransactionLines(state.cart),
+      items,
       total,
       paymentMethod: method,
       amountPaid,
       change: amountPaid - total,
       status: 'Payment Successful',
     }
+    pendingTransaction.current = transaction
     try {
       await transactionRepository.save(transaction)
       dispatch({ type: 'COMPLETE', transaction })
     } catch {
       setPaymentError('Payment could not be saved. Please check the connection and try again.')
     } finally {
+      paymentLock.current = false
       setProcessing(false)
     }
   }
 
   const startNewTransaction = () => {
+    pendingTransaction.current = null
     setCashAmount('')
     setPaymentError('')
     setProcessing(false)
