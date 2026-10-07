@@ -47,7 +47,7 @@ VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=your-public-publishable-key
 ```
 
-5. Restart `npm run dev`. The header will display **Supabase configured**.
+5. Restart `npm run dev`. The menu will load active products from Supabase.
 
 The migrations create products, transactions, immutable transaction items, validation constraints, Row Level Security, seed products, and an atomic transaction function. Never place the Supabase service-role key in this frontend project.
 
@@ -71,16 +71,23 @@ The migrations create products, transactions, immutable transaction items, valid
 - `src/components` — reusable order components
 - `supabase/migrations` — database schema, policies, seed data, and RPC
 
+## Group contributions
+
+| Member | Name | GitHub username | Contribution | Feature branch | Commit SHA(s) | PR URL | Reviewer / merge status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| M1 | | | Initial project configuration and core POS system | | | | |
+| M2 | | | Supabase integration, checkout validation, persistence, and logic cleanup | | | | |
+| M3 | | | UI/UX enhancement, touchscreen accessibility, navigation, and interface verification | | | | |
+
+Names and evidence fields are intentionally blank until actual member and GitHub records are supplied. Record the final integration commit SHA used for the instructor demonstration. Three members share the work; the checklist's requirement for seven genuine development stages still applies to the group history.
+
 ## Git and group workflow
 
-Use real development evidence rather than creating artificial commits solely to satisfy the rubric.
-
-1. Agree on an integration branch and create genuine feature branches for setup, catalog/UI, cart/state, payments, persistence, receipt/reset, and testing/documentation.
-2. Commit meaningful stages using descriptive messages.
-3. Push each branch and open a pull request into the integration branch.
-4. Have another member review the pull request. Address requested changes before approval and merge.
-5. Record each member's GitHub identity, branch, authored commit SHAs, pull request URL, reviewer, and merge status.
-6. Record the final integration commit SHA used for the instructor demonstration.
+1. Develop each member's assigned work on an identifiable feature branch.
+2. Commit meaningful changes with descriptive messages and push to the shared repository.
+3. Open a pull request targeting the integration branch.
+4. Have another member review it and address requested changes before merge.
+5. Fill the three-member contribution register with actual commit, PR, review, and merge evidence.
 
 ## AI development evidence
 
@@ -102,3 +109,11 @@ The database checks active products, catalog names/prices, positive quantities, 
 After applying migrations, run `supabase/tests/checkout.sql` in the SQL editor. It rolls back its sample records. Then complete Cash, QR, and Card checkouts in the application. Verify one transaction row and matching item rows per receipt in the dashboard. Live database verification requires a configured project.
 
 The current AI-assisted implementation record is in `docs/ai-development-evidence.md`.
+
+## Touchscreen interface
+
+The kiosk uses large product cards, category tabs, 48-pixel or larger touch controls, readable totals, and visible checkout progress. The cart supports quantity changes and removal. Back controls preserve the order. Cash shortcuts reduce typing; the QR placeholder is clearly labeled as a simulation. Catalog loading failures offer a retry control, payment errors stay beside the payment controls, and screen changes move keyboard focus to the new heading. Responsive layouts retain progress labels on phones; reduced-motion preferences are respected.
+
+## Replacing product illustrations with photos
+
+Place your photos in `public/images/products/` using the filenames listed in `public/images/products/README.md`. The app uses each photo automatically and keeps illustrations as fallbacks. Update `imageUrl` in `src/data/products.ts` for other filenames or extensions. Commit the photos and redeploy to update the hosted kiosk.

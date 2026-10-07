@@ -13,7 +13,7 @@ export function OrderLines({ cart, editable = false, onIncrement, onDecrement, o
   return (
     <div className="order-lines">
       {cart.map((line) => (
-        <article className="order-line" key={line.product.id}>
+        <article aria-label={line.product.name} className="order-line" key={line.product.id}>
           <div className="line-main">
             <strong>{line.product.name}</strong>
             <span>{formatCurrency(line.product.price)} each</span>

@@ -11,6 +11,6 @@ export async function loadProducts(): Promise<Product[]> {
   return data.map((row) => {
     if (!Number.isSafeInteger(row.price) || row.price < 0) throw new Error('Invalid catalog price.')
     const visual = products.find((product) => product.id === row.id)
-    return { ...row, accent: visual?.accent ?? '#173f32', initials: visual?.initials ?? row.name.slice(0, 2).toUpperCase() }
+    return { ...row, imageUrl: visual?.imageUrl, accent: visual?.accent ?? '#173f32', initials: visual?.initials ?? row.name.slice(0, 2).toUpperCase() }
   })
 }
