@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { transactionRepository } from './repositories/transactions'
 
+vi.mock('./lib/supabase', () => ({ supabase: null, usesSupabase: false }))
+
 beforeEach(() => { localStorage.clear(); vi.restoreAllMocks() })
 
 describe('complete cash checkout', () => {
@@ -118,4 +120,57 @@ describe('acceptance checkout paths', () => {
     expect(await screen.findByRole('button', { name: /View Receipt/ })).toBeInTheDocument()
     expect(save.mock.calls[1][0]).toEqual(save.mock.calls[0][0])
   })
+})
+
+
+describe('touchscreen navigation', () => {
+  it('filters categories without losing the cart and resets the filter for a new customer', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click((await screen.findAllByRole('button', { name: /Brewed Coffee/ }))[0])
+    await user.click(screen.getByRole('button', { name: 'Snacks' }))
+    expect(screen.queryByRole('button', { name: /Brewed Coffee.*Tap to add/ })).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Brewed Coffee quantity')).toHaveTextContent('1')
+    await user.click(screen.getByRole('button', { name: /Review Order/ }))
+    expect(screen.getByRole('heading', { name: 'Review your order' })).toHaveFocus()
+    await user.click(screen.getByRole('button', { name: /Back to menu/ }))
+    expect(screen.getByRole('button', { name: 'Snacks' })).toHaveAttribute('aria-pressed', 'true')
+    await user.click(screen.getByRole('button', { name: /Review Order/ }))
+    await user.click(screen.getByRole('button', { name: /Continue to Payment/ }))
+    await user.click(screen.getByRole('button', { name: 'Cash' }))
+    await user.click(screen.getByRole('button', { name: 'Exact amount' }))
+    expect(screen.getByLabelText('Amount paid')).toHaveValue(45)
+    await user.click(screen.getByRole('button', { name: 'Pay Now' }))
+    await user.click(await screen.findByRole('button', { name: /View Receipt/ }))
+    await user.click(screen.getByRole('button', { name: /Start New Transaction/ }))
+    expect(screen.getByRole('button', { name: 'All items' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByText('Your order is empty')).toBeInTheDocument()
+  })
+})
+
+
+it('offers eight products and gives separate references to consecutive customers', async () => {
+  const user = userEvent.setup()
+  render(<App />)
+  await screen.findAllByRole('button', { name: /Brewed Coffee/ })
+  expect(document.querySelectorAll('.product-card')).toHaveLength(8)
+  const references: string[] = []
+  for (let customer = 0; customer < 2; customer++) {
+    await user.click(screen.getByRole('button', { name: /Brewed Coffee/ }))
+    expect(screen.getByText('Brewed Coffee added to your order.')).toHaveAttribute('role', 'status')
+    await user.click(screen.getByRole('button', { name: /Review Order/ }))
+    await user.click(screen.getByRole('button', { name: /Continue to Payment/ }))
+    await user.click(screen.getByRole('button', { name: 'QR Payment' }))
+    expect(screen.getByText('Scan the QR code using your supported payment application')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Confirm Payment' }))
+    expect(await screen.findByText('PAYMENT SUCCESSFUL')).toBeInTheDocument()
+    references.push(screen.getByText(/^TXN-/).textContent!)
+    await user.click(screen.getByRole('button', { name: /View Receipt/ }))
+    expect(screen.getByText('Payment Successful')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Start New Transaction/ }))
+    expect(screen.queryByText(/^TXN-/)).not.toBeInTheDocument()
+    expect(screen.getByText('Your order is empty')).toBeInTheDocument()
+  }
+  expect(references[0]).not.toBe(references[1])
+  expect(JSON.parse(localStorage.getItem('campus-pos-transactions')!)).toHaveLength(2)
 })

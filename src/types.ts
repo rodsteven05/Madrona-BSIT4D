@@ -8,6 +8,7 @@ export interface Product {
   category: string
   price: number
   accent: string
+  imageUrl?: string
   initials: string
 }
 
